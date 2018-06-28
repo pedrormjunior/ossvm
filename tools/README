@@ -73,7 +73,7 @@ grid_options :
 -svmtrain pathname : set svm executable path and name
 -gnuplot {pathname | "null"} :
     pathname -- set gnuplot executable path and name
-    "null"   -- do not plot 
+    "null"   -- do not plot
 -out {pathname | "null"} : (default dataset.out)
     pathname -- set output file path and name
     "null"   -- do not output file
@@ -161,7 +161,7 @@ Calling grid in Python
 ======================
 
 In addition to using grid.py as a command-line tool, you can use it as a
-Python module. 
+Python module.
 
 >>> rate, param = find_parameters(dataset, options)
 
@@ -206,5 +206,3 @@ Example
 > python checkdata.py bad_data
 line 1: feature indices must be in an ascending order, previous/current features 3:1 2:4
 Found 1 lines with error.
-
-

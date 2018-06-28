@@ -258,5 +258,3 @@ def svm_predict(y, x, m, options=""):
 		info("Accuracy = %g%% (%d/%d) (classification)" % (ACC, int(l*ACC/100), l))
 
 	return pred_labels, (ACC, MSE, SCC), pred_values
-
-
