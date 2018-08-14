@@ -1,0 +1,7 @@
+*.o
+*.pyc
+
+libsvm.so.2
+svm-predict
+svm-scale
+svm-train
