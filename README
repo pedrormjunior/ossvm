@@ -42,8 +42,9 @@ More information about parameter selection can be found in
 Installation and Data Format
 ============================
 
-On Unix systems, type `make' to build the `svm-train' and `svm-predict'
-programs. Run them without arguments to show the usages of them.
+On Unix systems, type `make' to build the `svm-train', `svm-predict',
+and `svm-scale' programs. Run them without arguments to show the
+usages of them.
 
 On other systems, consult `Makefile' to build them (e.g., see
 'Building Windows binaries' in this file) or use the pre-built
@@ -57,7 +58,7 @@ The format of training and testing data files is:
 .
 
 Each line contains an instance and is ended by a '\n' character. For
-<labal> in the training set, we have the following cases.
+<label> in the training set, we have the following cases.
 
 * classification: <label> is an integer indicating the class label
   (multi-class is supported).
@@ -675,7 +676,7 @@ You may need to increase maximum Java heap size.
 Library usages are similar to the C version. These functions are available:
 
 public class svm {
-	public static final int LIBSVM_VERSION=323;
+	public static final int LIBSVM_VERSION=324;
 	public static svm_model svm_train(svm_problem prob, svm_parameter param);
 	public static void svm_cross_validation(svm_problem prob, svm_parameter param, int nr_fold, double[] target);
 	public static int svm_get_svm_type(svm_model model);
@@ -718,7 +719,7 @@ them via Visual C++, use the following steps:
 to libsvm directory. If environment variables of VC++ have not been
 set, type
 
-""C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\amd64\vcvars64.bat""
+"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 You may have to modify the above command according which version of
 VC++ or where it is installed.
@@ -732,7 +733,7 @@ nmake -f Makefile.win clean all
 nmake -f Makefile.win lib
 
 4. (optional) To build 32-bit windows binaries, you must
-	(1) Setup "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat" instead of vcvars64.bat
+	(1) Setup "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat" instead of vcvars64.bat
 	(2) Change CFLAGS in Makefile.win: /D _WIN64 to /D _WIN32
 
 Another way is to build them from Visual C++ environment. See details
