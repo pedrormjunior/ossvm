@@ -224,10 +224,10 @@ class svm_problem(Structure):
 
 class svm_parameter(Structure):
 	_names = ["svm_type", "kernel_type", "degree", "gamma", "coef0",
-			"cache_size", "eps", "C", "nr_weight", "weight_label", "weight",
+			"cache_size", "eps", "C", "lamb", "nr_weight", "weight_label", "weight",
 			"nu", "p", "shrinking", "probability"]
 	_types = [c_int, c_int, c_int, c_double, c_double,
-			c_double, c_double, c_double, c_int, POINTER(c_int), POINTER(c_double),
+			c_double, c_double, c_double, c_double, c_int, POINTER(c_int), POINTER(c_double),
 			c_double, c_double, c_int, c_int]
 	_fields_ = genFields(_names, _types)
 
@@ -255,6 +255,7 @@ class svm_parameter(Structure):
 		self.nu = 0.5
 		self.cache_size = 100
 		self.C = 1
+		self.lamb = -1
 		self.eps = 0.001
 		self.p = 0.1
 		self.shrinking = 1
@@ -304,6 +305,9 @@ class svm_parameter(Structure):
 			elif argv[i] == "-c":
 				i = i + 1
 				self.C = float(argv[i])
+			elif argv[i] == "-l":
+				i = i + 1
+				self.lamb = float(argv[i])
 			elif argv[i] == "-e":
 				i = i + 1
 				self.eps = float(argv[i])

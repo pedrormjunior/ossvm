@@ -29,6 +29,7 @@ void exit_with_help()
 	"-g gamma : set gamma in kernel function (default 1/num_features)\n"
 	"-r coef0 : set coef0 in kernel function (default 0)\n"
 	"-c cost : set the parameter C of C-SVC, epsilon-SVR, and nu-SVR (default 1)\n"
+	"-l lamb : set the parameter lambda of SSVM (C-SVC) for open-set recognition (default -1)\n"
 	"-n nu : set the parameter nu of nu-SVC, one-class SVM, and nu-SVR (default 0.5)\n"
 	"-p epsilon : set the epsilon in loss function of epsilon-SVR (default 0.1)\n"
 	"-m cachesize : set cache memory size in MB (default 100)\n"
@@ -172,6 +173,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 	param.nu = 0.5;
 	param.cache_size = 100;
 	param.C = 1;
+	param.lamb = -1;
 	param.eps = 1e-3;
 	param.p = 0.1;
 	param.shrinking = 1;
@@ -212,6 +214,9 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				break;
 			case 'c':
 				param.C = atof(argv[i]);
+				break;
+			case 'l':
+				param.lamb = atof(argv[i]);
 				break;
 			case 'e':
 				param.eps = atof(argv[i]);

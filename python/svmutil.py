@@ -74,6 +74,7 @@ def svm_train(arg1, arg2=None, arg3=None):
 	    -g gamma : set gamma in kernel function (default 1/num_features)
 	    -r coef0 : set coef0 in kernel function (default 0)
 	    -c cost : set the parameter C of C-SVC, epsilon-SVR, and nu-SVR (default 1)
+	    -l lamb : set the parameter lamb of SSVM (C-SVC) for open-set recognition (default -1)
 	    -n nu : set the parameter nu of nu-SVC, one-class SVM, and nu-SVR (default 0.5)
 	    -p epsilon : set the epsilon in loss function of epsilon-SVR (default 0.1)
 	    -m cachesize : set cache memory size in MB (default 100)

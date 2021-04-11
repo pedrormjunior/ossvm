@@ -1447,9 +1447,10 @@ static void solve_c_svc(
 
 	int i;
 
+	double alpha_epsilon = param->lamb >= 0 ? param->lamb * param->C : 0;
 	for(i=0;i<l;i++)
 	{
-		alpha[i] = 0;
+		alpha[i] = prob->y[i] > 0 ? alpha_epsilon : 0;
 		minus_ones[i] = -1;
 		if(prob->y[i] > 0) y[i] = +1; else y[i] = -1;
 	}
@@ -2669,6 +2670,8 @@ int svm_save_model(const char *model_file_name, const svm_model *model)
 	if(param.kernel_type == POLY || param.kernel_type == SIGMOID)
 		fprintf(fp,"coef0 %.17g\n", param.coef0);
 
+	fprintf(fp,"lamb %g\n", param.lamb);
+
 	int nr_class = model->nr_class;
 	int l = model->l;
 	fprintf(fp, "nr_class %d\n", nr_class);
@@ -2825,6 +2828,8 @@ bool read_model_header(FILE *fp, svm_model* model)
 			FSCANF(fp,"%lf",&param.gamma);
 		else if(strcmp(cmd,"coef0")==0)
 			FSCANF(fp,"%lf",&param.coef0);
+		else if(strcmp(cmd,"lamb")==0)
+			FSCANF(fp,"%lf",&param.lamb);
 		else if(strcmp(cmd,"nr_class")==0)
 			FSCANF(fp,"%d",&model->nr_class);
 		else if(strcmp(cmd,"total_sv")==0)
@@ -3085,6 +3090,15 @@ const char *svm_check_parameter(const svm_problem *prob, const svm_parameter *pa
 	   svm_type == NU_SVR)
 		if(param->C <= 0)
 			return "C <= 0";
+
+	if(param->lamb < 0 && param->lamb != -1)
+		return "lamb < 0 and lamb != -1";
+	if(param->lamb >= 1)
+		return "lamb >= 1";
+	if(param->lamb >= 0 && svm_type != C_SVC)
+		return "lamb >= 0 and svm_type != C_SVC";
+	if(param->lamb >= 0 && kernel_type != RBF)
+		return "lamb > 0 and kernel_type != RBF";
 
 	if(svm_type == NU_SVC ||
 	   svm_type == ONE_CLASS ||
