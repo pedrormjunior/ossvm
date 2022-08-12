@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
 import os, sys
-sys.path = [os.path.dirname(os.path.abspath(__file__))] + sys.path
-from svm import *
-from svm import __all__ as svm_all
-from svm import scipy, sparse
-from commonutil import *
-from commonutil import __all__ as common_all
+from .svm import *
+from .svm import __all__ as svm_all
+from .commonutil import *
+from .commonutil import __all__ as common_all
+
+try:
+    import numpy as np
+    import scipy
+    from scipy import sparse
+except:
+    scipy = None
+
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -59,11 +65,11 @@ def svm_train(arg1, arg2=None, arg3=None):
     either accuracy (ACC) or mean-squared error (MSE) is returned.
     options:
         -s svm_type : set type of SVM (default 0)
-            0 -- C-SVC		(multi-class classification)
-            1 -- nu-SVC		(multi-class classification)
+            0 -- C-SVC        (multi-class classification)
+            1 -- nu-SVC        (multi-class classification)
             2 -- one-class SVM
-            3 -- epsilon-SVR	(regression)
-            4 -- nu-SVR		(regression)
+            3 -- epsilon-SVR    (regression)
+            4 -- nu-SVR        (regression)
         -t kernel_type : set type of kernel function (default 2)
             0 -- linear: u'*v
             1 -- polynomial: (gamma*u'*v + coef0)^degree
@@ -80,14 +86,14 @@ def svm_train(arg1, arg2=None, arg3=None):
         -m cachesize : set cache memory size in MB (default 100)
         -e epsilon : set tolerance of termination criterion (default 0.001)
         -h shrinking : whether to use the shrinking heuristics, 0 or 1 (default 1)
-        -b probability_estimates : whether to train a SVC or SVR model for probability estimates, 0 or 1 (default 0)
+        -b probability_estimates : whether to train a model for probability estimates, 0 or 1 (default 0)
         -wi weight : set the parameter C of class i to weight*C, for C-SVC (default 1)
         -v n: n-fold cross validation mode
         -q : quiet mode (no outputs)
     """
     prob, param = None, None
-    if isinstance(arg1, (list, tuple)) or (scipy and isinstance(arg1, scipy.ndarray)):
-        assert isinstance(arg2, (list, tuple)) or (scipy and isinstance(arg2, (scipy.ndarray, sparse.spmatrix)))
+    if isinstance(arg1, (list, tuple)) or (scipy and isinstance(arg1, np.ndarray)):
+        assert isinstance(arg2, (list, tuple)) or (scipy and isinstance(arg2, (np.ndarray, sparse.spmatrix)))
         y, x, options = arg1, arg2, arg3
         param = svm_parameter(options)
         prob = svm_problem(y, x, isKernel=(param.kernel_type == PRECOMPUTED))
@@ -152,7 +158,7 @@ def svm_predict(y, x, m, options=""):
     Predict data (y, x) with the SVM model m.
     options:
         -b probability_estimates: whether to predict probability estimates,
-            0 or 1 (default 0); for one-class SVM only 0 is supported.
+            0 or 1 (default 0).
         -q : quiet mode (no outputs).
 
     The return tuple contains
@@ -171,14 +177,14 @@ def svm_predict(y, x, m, options=""):
     def info(s):
         print(s)
 
-    if scipy and isinstance(x, scipy.ndarray):
-        x = scipy.ascontiguousarray(x) # enforce row-major
+    if scipy and isinstance(x, np.ndarray):
+        x = np.ascontiguousarray(x) # enforce row-major
     elif sparse and isinstance(x, sparse.spmatrix):
         x = x.tocsr()
     elif not isinstance(x, (list, tuple)):
         raise TypeError("type of x: {0} is not supported!".format(type(x)))
 
-    if (not isinstance(y, (list, tuple))) and (not (scipy and isinstance(y, scipy.ndarray))):
+    if (not isinstance(y, (list, tuple))) and (not (scipy and isinstance(y, np.ndarray))):
         raise TypeError("type of y: {0} is not supported!".format(type(y)))
 
     predict_probability = 0
@@ -211,7 +217,7 @@ def svm_predict(y, x, m, options=""):
 
         if svm_type in [NU_SVR, EPSILON_SVR]:
             info("Prob. model for test data: target value = predicted value + z,\n"
-                 "z: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=%g" % m.get_svr_probability());
+            "z: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=%g" % m.get_svr_probability());
             nr_class = 0
 
         prob_estimates = (c_double * nr_class)()

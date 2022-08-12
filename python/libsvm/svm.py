@@ -3,14 +3,16 @@
 from ctypes import *
 from ctypes.util import find_library
 from os import path
+from glob import glob
 import sys
 
 try:
+    import numpy as np
     import scipy
     from scipy import sparse
 except:
     scipy = None
-    sparse = None
+
 
 if sys.version_info[0] < 3:
     range = xrange
@@ -24,18 +26,23 @@ __all__ = ['libsvm', 'svm_problem', 'svm_parameter',
 
 try:
     dirname = path.dirname(path.abspath(__file__))
-    if sys.platform == 'win32':
-	libsvm = CDLL(path.join(dirname, r'..\windows\libsvm.dll'))
-    else:
-	libsvm = CDLL(path.join(dirname, '../libsvm.so.2'))
+    dynamic_lib_name = 'clib.cp*'
+    path_to_so = glob(path.join(dirname, dynamic_lib_name))[0]
+    libsvm = CDLL(path_to_so)
 except:
-# For unix the prefix 'lib' is not considered.
-    if find_library('svm'):
-	libsvm = CDLL(find_library('svm'))
-    elif find_library('libsvm'):
-	libsvm = CDLL(find_library('libsvm'))
-    else:
-	raise Exception('LIBSVM library not found.')
+    try:
+        if sys.platform == 'win32':
+            libsvm = CDLL(path.join(dirname, r'..\..\windows\libsvm.dll'))
+        else:
+            libsvm = CDLL(path.join(dirname, '../../libsvm.so.3'))
+    except:
+    # For unix the prefix 'lib' is not considered.
+        if find_library('svm'):
+            libsvm = CDLL(find_library('svm'))
+        elif find_library('libsvm'):
+            libsvm = CDLL(find_library('libsvm'))
+        else:
+            raise Exception('LIBSVM library not found.')
 
 C_SVC = 0
 NU_SVC = 1
@@ -77,21 +84,21 @@ def gen_svm_nodearray(xi, feature_max=None, isKernel=False):
 
     xi_shift = 0 # ensure correct indices of xi
     if scipy and isinstance(xi, tuple) and len(xi) == 2\
-       and isinstance(xi[0], scipy.ndarray) and isinstance(xi[1], scipy.ndarray): # for a sparse vector
+            and isinstance(xi[0], np.ndarray) and isinstance(xi[1], np.ndarray): # for a sparse vector
         if not isKernel:
             index_range = xi[0] + 1 # index starts from 1
         else:
             index_range = xi[0] # index starts from 0 for precomputed kernel
         if feature_max:
-            index_range = index_range[scipy.where(index_range <= feature_max)]
-    elif scipy and isinstance(xi, scipy.ndarray):
+            index_range = index_range[np.where(index_range <= feature_max)]
+    elif scipy and isinstance(xi, np.ndarray):
         if not isKernel:
             xi_shift = 1
             index_range = xi.nonzero()[0] + 1 # index starts from 1
         else:
-            index_range = scipy.arange(0, len(xi)) # index starts from 0 for precomputed kernel
+            index_range = np.arange(0, len(xi)) # index starts from 0 for precomputed kernel
         if feature_max:
-            index_range = index_range[scipy.where(index_range <= feature_max)]
+            index_range = index_range[np.where(index_range <= feature_max)]
     elif isinstance(xi, (dict, list, tuple)):
         if isinstance(xi, dict):
             index_range = xi.keys()
@@ -115,7 +122,7 @@ def gen_svm_nodearray(xi, feature_max=None, isKernel=False):
     ret[-1].index = -1
 
     if scipy and isinstance(xi, tuple) and len(xi) == 2\
-       and isinstance(xi[0], scipy.ndarray) and isinstance(xi[1], scipy.ndarray): # for a sparse vector
+            and isinstance(xi[0], np.ndarray) and isinstance(xi[1], np.ndarray): # for a sparse vector
         for idx, j in enumerate(index_range):
             ret[idx].index = j
             ret[idx].value = (xi[1])[idx]
@@ -146,19 +153,19 @@ def csr_to_problem_jit(l, x_val, x_ind, x_rowptr, prob_val, prob_ind, prob_rowpt
             prob_val[j-b1+b2] = x_val[j]
 def csr_to_problem_nojit(l, x_val, x_ind, x_rowptr, prob_val, prob_ind, prob_rowptr, indx_start):
     for i in range(l):
-	x_slice = slice(x_rowptr[i], x_rowptr[i+1])
-	prob_slice = slice(prob_rowptr[i], prob_rowptr[i+1]-1)
-	prob_ind[prob_slice] = x_ind[x_slice]+indx_start
-	prob_val[prob_slice] = x_val[x_slice]
+        x_slice = slice(x_rowptr[i], x_rowptr[i+1])
+        prob_slice = slice(prob_rowptr[i], prob_rowptr[i+1]-1)
+        prob_ind[prob_slice] = x_ind[x_slice]+indx_start
+        prob_val[prob_slice] = x_val[x_slice]
 
 def csr_to_problem(x, prob, isKernel):
     if not x.has_sorted_indices:
-	x.sort_indices()
+        x.sort_indices()
 
     # Extra space for termination node and (possibly) bias term
-    x_space = prob.x_space = scipy.empty((x.nnz+x.shape[0]), dtype=svm_node)
+    x_space = prob.x_space = np.empty((x.nnz+x.shape[0]), dtype=svm_node)
     prob.rowptr = x.indptr.copy()
-    prob.rowptr[1:] += scipy.arange(1,x.shape[0]+1)
+    prob.rowptr[1:] += np.arange(1,x.shape[0]+1)
     prob_ind = x_space["index"]
     prob_val = x_space["value"]
     prob_ind[:] = -1
@@ -177,17 +184,17 @@ class svm_problem(Structure):
     _fields_ = genFields(_names, _types)
 
     def __init__(self, y, x, isKernel=False):
-        if (not isinstance(y, (list, tuple))) and (not (scipy and isinstance(y, scipy.ndarray))):
+        if (not isinstance(y, (list, tuple))) and (not (scipy and isinstance(y, np.ndarray))):
             raise TypeError("type of y: {0} is not supported!".format(type(y)))
 
         if isinstance(x, (list, tuple)):
             if len(y) != len(x):
                 raise ValueError("len(y) != len(x)")
-        elif scipy != None and isinstance(x, (scipy.ndarray, sparse.spmatrix)):
+        elif scipy != None and isinstance(x, (np.ndarray, sparse.spmatrix)):
             if len(y) != x.shape[0]:
                 raise ValueError("len(y) != len(x)")
-            if isinstance(x, scipy.ndarray):
-                x = scipy.ascontiguousarray(x) # enforce row-major
+            if isinstance(x, np.ndarray):
+                x = np.ascontiguousarray(x) # enforce row-major
             if isinstance(x, sparse.spmatrix):
                 x = x.tocsr()
                 pass
@@ -208,8 +215,8 @@ class svm_problem(Structure):
         self.n = max_idx
 
         self.y = (c_double * l)()
-        if scipy != None and isinstance(y, scipy.ndarray):
-            scipy.ctypeslib.as_array(self.y, (self.l,))[:] = y
+        if scipy != None and isinstance(y, np.ndarray):
+            np.ctypeslib.as_array(self.y, (self.l,))[:] = y
         else:
             for i, yi in enumerate(y): self.y[i] = yi
 
@@ -217,7 +224,7 @@ class svm_problem(Structure):
         if scipy != None and isinstance(x, sparse.csr_matrix):
             base = addressof(self.x_space.ctypes.data_as(POINTER(svm_node))[0])
             x_ptr = cast(self.x, POINTER(c_uint64))
-            x_ptr = scipy.ctypeslib.as_array(x_ptr,(self.l,))
+            x_ptr = np.ctypeslib.as_array(x_ptr,(self.l,))
             x_ptr[:] = self.rowptr[:-1]*sizeof(svm_node)+base
         else:
             for i, xi in enumerate(self.x_space): self.x[i] = xi
@@ -346,11 +353,12 @@ class svm_parameter(Structure):
 
 class svm_model(Structure):
     _names = ['param', 'nr_class', 'l', 'SV', 'sv_coef', 'rho',
-              'probA', 'probB', 'sv_indices', 'label', 'nSV', 'free_sv']
+            'probA', 'probB', 'prob_density_marks', 'sv_indices',
+            'label', 'nSV', 'free_sv']
     _types = [svm_parameter, c_int, c_int, POINTER(POINTER(svm_node)),
-              POINTER(POINTER(c_double)), POINTER(c_double),
-              POINTER(c_double), POINTER(c_double), POINTER(c_int),
-              POINTER(c_int), POINTER(c_int), c_int]
+            POINTER(POINTER(c_double)), POINTER(c_double),
+            POINTER(c_double), POINTER(c_double), POINTER(c_double),
+            POINTER(c_int), POINTER(c_int), POINTER(c_int), c_int]
     _fields_ = genFields(_names, _types)
 
     def __init__(self):
